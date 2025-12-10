@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="CloudatR.Lib.Tests/CloudatR.Lib.Tests.csproj" />
   <Project Path="CloudatR.Lib/CloudatR.Lib.csproj" />
   <Project Path="CloudatR.App/CloudatR.App.csproj" />
 </Solution>

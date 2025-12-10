@@ -1,5 +1,6 @@
 using CloudatR.Lib.Abstractions;
 using CloudatR.Lib.CloudEvents;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CloudatR.Lib.Internal;
 
@@ -32,6 +33,9 @@ internal sealed class NotificationHandlerWrapper
         IServiceProvider serviceProvider,
         CancellationToken cancellationToken)
     {
+        // Update the scoped CloudEvent context
+        await UpdateCloudEventContext(serviceProvider, context);
+
         var handler = _handlerFactory(serviceProvider);
 
         // Get the Handle method
@@ -50,5 +54,23 @@ internal sealed class NotificationHandlerWrapper
         {
             await task;
         }
+    }
+
+    private static Task UpdateCloudEventContext(IServiceProvider serviceProvider, ICloudEventContext context)
+    {
+        // Get the scoped CloudEventContext and update it
+        var scopedContext = serviceProvider.GetService<CloudEventContext>();
+        if (scopedContext != null)
+        {
+            // Update the scoped context with values from the created context
+            scopedContext.EventId = context.EventId;
+            scopedContext.Source = context.Source;
+            scopedContext.Type = context.Type;
+            scopedContext.Time = context.Time;
+            scopedContext.Subject = context.Subject;
+            scopedContext.Extensions = context.Extensions;
+        }
+
+        return Task.CompletedTask;
     }
 }

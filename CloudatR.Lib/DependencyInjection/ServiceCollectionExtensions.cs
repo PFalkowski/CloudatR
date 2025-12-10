@@ -142,11 +142,14 @@ public static class ServiceCollectionExtensions
             {
                 var notificationType = @interface.GetGenericArguments()[0];
 
-                // Register the handler
-                services.Add(new ServiceDescriptor(@interface, type, configuration.HandlerLifetime));
+                // Register the handler by implementation type to support multiple handlers
+                services.Add(new ServiceDescriptor(type, type, configuration.HandlerLifetime));
 
-                // Cache the handler wrapper
-                handlerCache.CacheNotificationHandler(notificationType, @interface);
+                // Also register by interface for GetServices<INotificationHandler<T>>() to work
+                services.Add(new ServiceDescriptor(@interface, sp => sp.GetRequiredService(type), configuration.HandlerLifetime));
+
+                // Cache the handler wrapper with both interface and implementation types
+                handlerCache.CacheNotificationHandler(notificationType, @interface, type);
             }
         }
     }

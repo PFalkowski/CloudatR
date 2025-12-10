@@ -83,9 +83,9 @@ internal sealed class MediatoRHandlerCache : IMediatoRHandlerCache
     /// <summary>
     /// Caches a notification handler during DI registration.
     /// </summary>
-    internal void CacheNotificationHandler(Type notificationType, Type handlerInterfaceType)
+    internal void CacheNotificationHandler(Type notificationType, Type handlerInterfaceType, Type handlerImplementationType)
     {
-        var handlerFactory = BuildNotificationHandlerFactory(handlerInterfaceType);
+        var handlerFactory = BuildNotificationHandlerFactory(handlerInterfaceType, handlerImplementationType);
         var wrapper = new NotificationHandlerWrapper(handlerFactory, notificationType);
 
         _notificationHandlers.AddOrUpdate(
@@ -155,13 +155,14 @@ internal sealed class MediatoRHandlerCache : IMediatoRHandlerCache
         return lambda.Compile();
     }
 
-    private static Func<IServiceProvider, object> BuildNotificationHandlerFactory(Type serviceType)
+    private static Func<IServiceProvider, object> BuildNotificationHandlerFactory(Type interfaceType, Type implementationType)
     {
-        // Build expression: sp => sp.GetRequiredService<TService>()
+        // Build expression: sp => (object)sp.GetRequiredService<TImplementation>()
+        // We resolve by implementation type to support multiple handlers for the same notification
         var serviceProviderParam = Expression.Parameter(typeof(IServiceProvider), "sp");
         var getServiceMethod = typeof(ServiceProviderServiceExtensions)
             .GetMethod(nameof(ServiceProviderServiceExtensions.GetRequiredService), new[] { typeof(IServiceProvider) })!
-            .MakeGenericMethod(serviceType);
+            .MakeGenericMethod(implementationType);
 
         var call = Expression.Call(null, getServiceMethod, serviceProviderParam);
         var cast = Expression.Convert(call, typeof(object));
